@@ -1,3 +1,4 @@
+jupyter
 pystan
 scipy
 seaborn
