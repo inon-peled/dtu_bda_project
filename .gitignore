@@ -1,1 +1,4 @@
+__pycache__/
+cached-model*.pkl
+old/
 .ipynb_checkpoints
