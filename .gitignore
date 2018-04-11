@@ -1,3 +1,4 @@
+model*.pkl
 fit_*/
 *.pyc
 __pycache__/
