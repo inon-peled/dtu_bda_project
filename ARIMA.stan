@@ -42,6 +42,8 @@ data {
 
     real theta_prior_location;
     real theta_prior_scale;
+
+    int<lower=0, upper=1> return_priors; //Whether to run the model at all, or just return samples from the priors
 }
 
 transformed data {
@@ -88,15 +90,12 @@ transformed parameters {
 model {
     matrix[T,K] err;
     matrix[T,K] nu;
-    matrix[T,P] Y_latent_change_lagged[K];
-    matrix[T-1,K] Y_latent_change;
-
-    Y_latent_change = Y_latent[2:T,:]-Y_latent[1:T-1,:];
+    matrix[T,P] Y_latent_lagged[K];
 
     for (k in 1:K){
-        Y_latent_change_lagged[k] = rep_matrix(0,T,P);
+        Y_latent_lagged[k] = rep_matrix(0,T,P);
         for (p in 1:P){
-            Y_latent_change_lagged[k, 1+p:T,p] = Y_latent_change[1:T-p,k];
+            Y_latent_lagged[k, p+1:T,p] = Y_latent[1:T-p,k];
         }
     }
 
@@ -106,32 +105,35 @@ model {
     for (p in 1:P){
         phi[:,p] ~ normal(phi_prior_location[p], phi_prior_scale[p]);
     }
+
     for (q in 1:Q){
         theta[:,q] ~ normal(theta_prior_location, theta_prior_scale);
     }
 
+    if (return_priors==0){
     for (k in 1:K) {
         nu[:,k] = rep_vector(mu[k], T);
 
         if (P>0){
-            nu[:,k] = nu[:,k] + Y_latent_change_lagged[k]*phi[k]';
+            nu[:,k] = nu[:,k] + Y_latent_lagged[k]*phi[k]';
             }
 
-        err[:,k] = Y_latent_change[:,k] - nu[:,k];
+        err[:,k] = Y_latent[:,k] - nu[:,k];
 
         if (Q>0){
             if (Q>1){
                 for (t in 2:Q){
                     nu[t,k] = nu[t,k] + theta[k,1:t-1]*err[1:t-1, k];
-                    err[t,k] = Y_latent_change[t,k] - nu[t,k];
+                    err[t,k] = Y_latent[t,k] - nu[t,k];
                 }
             }
-            for (t in 1+Q:T){
+            for (t in Q+1:T){
                 nu[t,k] = nu[t,k] + theta[k]*err[t-Q:t-1,k];
-                err[t,k] = Y_latent_change[t,k] - nu[t,k];
-                }
+                err[t,k] = Y_latent[t,k] - nu[t,k];
+            }
         }
 
-        err[1+max(P,Q):,k] ~ normal(0, sigma[k]);
+        err[max(P+1,Q+1):T,k] ~ normal(0, sigma[k]);
+    }
     }
 }
