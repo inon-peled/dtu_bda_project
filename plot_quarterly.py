@@ -20,12 +20,14 @@ def plot_quarterly(model_name, mean_predictions, ci_95_half_widths, y_test_2014)
         ('Q4', datetime(2014, 10, 1), datetime(2014, 12, 31))
     ]):    
         plt.subplot(411 + i)
-        plt.plot(filter_date_range(y_test_2014), "b-", label='Actual')
-        plt.plot(filter_date_range(mean_predictions), "r", label='Predicted')
+        plt.plot(filter_date_range(y_test_2014), "b-", label='Actual', lw=1.5)
+        plt.plot(filter_date_range(mean_predictions), "r-x", label='Predicted', lw=1)
         plt.fill_between(filter_date_range(y_test_2014).index, 
                          filter_date_range(mean_predictions + ci_95_half_widths),
                          filter_date_range(mean_predictions - ci_95_half_widths),
-                         color='lightgrey', label='95\% C.I.')
-        plt.legend(loc='lower right', fontsize=12)
+                         color='lightgrey', label='95% C.I.')
+        plt.legend(loc='lower left', fontsize=12)
+        plt.text(0.01, 0.9, quarter, fontsize=20,
+                 horizontalalignment='left', verticalalignment='center', transform=plt.gca().transAxes)
         if i == 0:
             plt.title(model_name, fontsize=20)
